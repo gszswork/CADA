@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import Function
 from model.bigcn_module import bigcn_feature_extractor
+import torch.nn.functional as F
 
 # CADA: 
 # This is a plugging-in framework for cross-domain fake news detection. 
@@ -17,7 +18,7 @@ class ReverseLayerF(Function):
         output = grad_output.neg() * ctx.alpha
         return output, None
 
-
+'''
 class CADA(torch.nn.Module):
     def __init__(self, feature_extractor, label_predictor, domain_classifier_0, domain_classifier_1):
         super(CADA, self).__init__()
@@ -46,7 +47,7 @@ class CADA(torch.nn.Module):
         
 
         return label_output, domain_output, one_indices, zero_indices
-
+'''
 
 
 class CADA(torch.nn.Module):
@@ -69,6 +70,8 @@ class CADA(torch.nn.Module):
         x_domain_feat = [x_feat[indices[i]] for i in range(self.class_num)]
         domain_output = [self.domain_classifier_list[i](x_domain_feat[i], alpha=0.2) for i in range(self.class_num)]
         cat_domain_output = torch.cat(domain_output, dim=0)
+        label_output = F.log_softmax(label_output, dim=1)
+        cat_domain_output = F.log_softmax(cat_domain_output, dim=1)
 
         return label_output, cat_domain_output, indices
         
