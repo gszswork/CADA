@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import Function
-from model.bigcn_module import bigcn_feature_extractor
+
 
 class ReverseLayerF(Function):
     @staticmethod

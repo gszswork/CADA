@@ -2,7 +2,6 @@ from torch_geometric.nn import GCNConv
 import copy
 import sys,os
 sys.path.append(os.getcwd())
-from Process.process import *
 import torch as th
 from torch_scatter import scatter_mean
 import torch.nn.functional as F
@@ -75,11 +74,12 @@ class BUrumorGCN(th.nn.Module):
 class bigcn_feature_extractor(th.nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats):
         super(bigcn_feature_extractor, self).__init__()
-        self.conv1 = GCNConv(in_feats, hid_feats)
-        self.conv2 = GCNConv(hid_feats, out_feats)
+        self.conv1 = TDrumorGCN(in_feats, hid_feats, out_feats)
+        self.conv2 = BUrumorGCN(in_feats, hid_feats, out_feats)
+
     def forward(self, data):
-        TD_x = self.TDrumorGCN(data)
-        BU_x = self.BUrumorGCN(data)
+        TD_x = self.conv1(data)
+        BU_x = self.conv2(data)
         x = th.cat((BU_x,TD_x), 1)
         return x
     
