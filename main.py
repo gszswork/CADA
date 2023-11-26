@@ -20,7 +20,7 @@ id_test_num = 230
 ood_train_num = 100
 ood_test_num = 300
 bs = 16
-n_epochs = 1
+n_epochs = 0
 
 
 if __name__ == '__main__':
@@ -95,4 +95,18 @@ if __name__ == '__main__':
 
     # 2nd round of training: Train the model with GRL.
     for batch in second_train_dataloader:
-        print(batch.domain_y)
+        #print(batch.domain_y)
+        out_labels, out_domains, indices = model(batch)    
+        # Only get label_loss from out-of-domain samples. Label prediction is performed on the original data order. 
+        ood_indices = torch.where(batch.domain_y == 1)[0]
+        label_loss = F.nll_loss(out_labels[ood_indices], batch.y[ood_indices])
+
+        # Align the order of predicted domain and domain true labels.
+        new_domain_y = batch.domain_y[indices]
+        domain_loss = F.nll_loss(out_domains, new_domain_y)
+        loss = label_loss - domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+

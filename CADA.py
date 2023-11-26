@@ -53,7 +53,6 @@ class CADA(torch.nn.Module):
 class CADA(torch.nn.Module):
     def __init__(self, feature_extractor, label_predictor, domain_classifier_list):
         super(CADA, self).__init__()
-        pass
         self.feature_extractor = feature_extractor
         self.label_predictor = label_predictor
         self.domain_classifier_list = domain_classifier_list
@@ -66,12 +65,14 @@ class CADA(torch.nn.Module):
 
         _, pred = label_output.max(dim=-1)
         # Be aware of the batch training. 
-        indices = [torch.where(pred == i) for i in range(self.class_num)]
+        indices = [torch.where(pred == i)[0] for i in range(self.class_num)]
         x_domain_feat = [x_feat[indices[i]] for i in range(self.class_num)]
         domain_output = [self.domain_classifier_list[i](x_domain_feat[i], alpha=0.2) for i in range(self.class_num)]
+
         cat_domain_output = torch.cat(domain_output, dim=0)
         label_output = F.log_softmax(label_output, dim=1)
         cat_domain_output = F.log_softmax(cat_domain_output, dim=1)
+        indices = torch.cat(indices, dim=0)
 
         return label_output, cat_domain_output, indices
         
