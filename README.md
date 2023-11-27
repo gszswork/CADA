@@ -30,8 +30,7 @@ To experiment the model's cross-domain detection ability, we use the Twitter dat
 
 ## Implementation setting. 
 
-In the reproduce, we design the CADA as an individual object which takes feature extractor, label classifier and domain classifier as parameters. You can substitude the three components with any modules (eg. BERT, GCN, MLP). The original paper uses GACL and BERT as the framework of these three components. Instead, for the conveniece of implemetation, we use the [BiGCN]
-(https://ojs.aaai.org/index.php/AAAI/article/view/5393). 
+In the reproduce, we design the CADA as an individual object which takes feature extractor, label classifier and domain classifier as parameters. You can substitude the three components with any modules (eg. BERT, GCN, MLP). The original paper uses GACL and BERT as the framework of these three components. Instead, for the conveniece of implemetation, we use the [BiGCN](https://ojs.aaai.org/index.php/AAAI/article/view/5393). 
 
 ## To Run
 
