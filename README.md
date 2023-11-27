@@ -46,7 +46,7 @@ sklearn
 random
 ```
 
-A detailed requirements file with version on my device is shown in requirements.txt. 
+A detailed requirements file with version on my device is shown in environment.yml 
 
 ### Run the code
 
