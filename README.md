@@ -37,8 +37,22 @@ In the reproduce, we design the CADA as an individual object which takes feature
 
 ### requirement: 
 
+```
+numpy
+pytorch
+torch_geometric
+torch_scatter
+sklearn
+random
+```
 
+A detailed requirements file with version on my device is shown in requirements.txt. 
 
+### Run the code
+
+```
+python main.py
+```
 
 
 
