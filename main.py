@@ -16,6 +16,9 @@ from sklearn import metrics
 # in-domain:        923, 230; 
 # out-of-domain:    100, 300. 
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
+
 id_train_num = 923
 id_test_num = 230
 ood_train_num = 100
@@ -23,8 +26,8 @@ ood_test_num = 300
 bs = 16
 n_epochs = 1   # pre-training epochs
 n_epochs_2nd = 1  # 2nd round of training epochs.
-seeds = [1, 2, 3, 4, 5]
 
+random.seed(1)
 
 if __name__ == '__main__':
     dataname = 'Twitter'
@@ -70,6 +73,7 @@ if __name__ == '__main__':
     bigcn_domain_classifier_1 = bigcn_domain_classifier((out_dim+hid_dim)*2, 2)
     bigcn_domain_classifier_list = [bigcn_domain_classifier_0, bigcn_domain_classifier_1]
     model = CADA(bigcn_feature_extractor, bigcn_label_predictor, bigcn_domain_classifier_list)
+    model.to(device)
 
     # pre-train the model on in-domain data. 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
@@ -106,7 +110,7 @@ if __name__ == '__main__':
             true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
             pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
         
-        print(metrics.classification_report(true_np, pred_np))
+        print(metrics.classification_report(true_np, pred_np, digits=3))
         cur_acc = metrics.accuracy_score(true_np, pred_np)
         if cur_acc > best_accuracy:
             best_accuracy = cur_acc
@@ -123,6 +127,7 @@ if __name__ == '__main__':
             batch.to(device)
             p = float(i + epoch * len(second_train_dataloader)) / n_epochs_2nd / len(second_train_dataloader)
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
+            alpha = torch.tensor(alpha).to(device)
             #print(batch.domain_y)
             out_labels, out_domains, indices = model(batch, alpha)    
             # Only get label_loss from out-of-domain samples. Label prediction is performed on the original data order. 
@@ -145,4 +150,5 @@ if __name__ == '__main__':
             _, pred = out_labels.max(dim=-1)
             true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
             pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
+        print('Testing on out-of-domain test data:')
         print(metrics.classification_report(true_np, pred_np))
