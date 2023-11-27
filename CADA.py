@@ -59,7 +59,13 @@ class CADA(torch.nn.Module):
         self.class_num = len(domain_classifier_list)
 
 
-    def forward(self, news_input):
+    def forward_label(self, news_input):
+        x = self.feature_extractor(news_input)
+        label_output = self.label_predictor(x)
+        label_output = F.log_softmax(label_output, dim=1)
+        return label_output
+
+    def forward(self, news_input, alpha):
         x_feat = self.feature_extractor(news_input)
         label_output = self.label_predictor(x_feat)
 
@@ -67,7 +73,9 @@ class CADA(torch.nn.Module):
         # Be aware of the batch training. 
         indices = [torch.where(pred == i)[0] for i in range(self.class_num)]
         x_domain_feat = [x_feat[indices[i]] for i in range(self.class_num)]
-        domain_output = [self.domain_classifier_list[i](x_domain_feat[i], alpha=0.2) for i in range(self.class_num)]
+
+        # TODO: implementation of alpha's calcualtion.
+        domain_output = [self.domain_classifier_list[i](x_domain_feat[i], alpha) for i in range(self.class_num)]
 
         cat_domain_output = torch.cat(domain_output, dim=0)
         label_output = F.log_softmax(label_output, dim=1)

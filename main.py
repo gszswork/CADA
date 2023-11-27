@@ -6,6 +6,7 @@ from CADA import CADA
 import torch
 import torch.nn.functional as F
 import random
+from sklearn import metrics
 
 # Dataset: in-domain Twitter, size 1154; out-of-domain Twitter-COVID19, size 400.
 
@@ -20,13 +21,14 @@ id_test_num = 230
 ood_train_num = 100
 ood_test_num = 300
 bs = 16
-n_epochs = 0
+n_epochs = 1   # pre-training epochs
+n_epochs_2nd = 1  # 2nd round of training epochs.
+seeds = [1, 2, 3, 4, 5]
 
 
 if __name__ == '__main__':
     dataname = 'Twitter'
     # Load the dataset. 
-
     id_twitter_ids, ood_twitter_ids = get_id_ood_twitter_ids()
     random.shuffle(id_twitter_ids)
     random.shuffle(ood_twitter_ids)
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     for epoch in range(n_epochs):
         for batch in id_train_dataloader:
             batch.to(device)
-            out_labels, _, _ = model(batch)
+            out_labels = model.forward_label(batch)
             
             label_loss = F.nll_loss(out_labels, batch.y)
             optimizer.zero_grad()
@@ -93,20 +95,54 @@ if __name__ == '__main__':
             print('Epoch: ',epoch ,'batch_idx: ', batch_idx, 'label_loss: ', label_loss.item(), 'train_acc: ', train_acc)
             batch_idx += 1
 
+        # Test the model on in-domain data, and save the best params. 
+        best_accuracy = -1
+        true_np, pred_np = np.array([]), np.array([])   
+        for batch in id_test_dataloader:
+            batch.to(device)
+            out_labels = model.forward_label(batch)
+            _, pred = out_labels.max(dim=-1)
+
+            true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
+            pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
+        
+        print(metrics.classification_report(true_np, pred_np))
+        cur_acc = metrics.accuracy_score(true_np, pred_np)
+        if cur_acc > best_accuracy:
+            best_accuracy = cur_acc
+            torch.save(model.state_dict(), 'best_params.pt')
+
     # 2nd round of training: Train the model with GRL.
-    for batch in second_train_dataloader:
-        #print(batch.domain_y)
-        out_labels, out_domains, indices = model(batch)    
-        # Only get label_loss from out-of-domain samples. Label prediction is performed on the original data order. 
-        ood_indices = torch.where(batch.domain_y == 1)[0]
-        label_loss = F.nll_loss(out_labels[ood_indices], batch.y[ood_indices])
+    model.load_state_dict(torch.load('best_params.pt'))
+    for epoch in range(n_epochs_2nd):
 
-        # Align the order of predicted domain and domain true labels.
-        new_domain_y = batch.domain_y[indices]
-        domain_loss = F.nll_loss(out_domains, new_domain_y)
-        loss = label_loss - domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        second_iter = iter(second_train_dataloader)
 
+        for i in range(len(second_train_dataloader)):
+            batch = next(second_iter)
+            batch.to(device)
+            p = float(i + epoch * len(second_train_dataloader)) / n_epochs_2nd / len(second_train_dataloader)
+            alpha = 2. / (1. + np.exp(-10 * p)) - 1
+            #print(batch.domain_y)
+            out_labels, out_domains, indices = model(batch, alpha)    
+            # Only get label_loss from out-of-domain samples. Label prediction is performed on the original data order. 
+            ood_indices = torch.where(batch.domain_y == 1)[0]
+            label_loss = F.nll_loss(out_labels[ood_indices], batch.y[ood_indices])
 
+            # Align the order of predicted domain and domain true labels.
+            new_domain_y = batch.domain_y[indices]
+            domain_loss = F.nll_loss(out_domains, new_domain_y)
+            loss = label_loss - domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        # Test the model on out-of-domain data.
+        true_np, pred_np = np.array([]), np.array([])
+        for batch in ood_test_dataloader: 
+            batch.to(device)
+            out_labels = model.forward_label(batch)
+            _, pred = out_labels.max(dim=-1)
+            true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
+            pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
+        print(metrics.classification_report(true_np, pred_np))
