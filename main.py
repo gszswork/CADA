@@ -38,7 +38,7 @@ if __name__ == '__main__':
     random.shuffle(id_twitter_ids)
     random.shuffle(ood_twitter_ids)
     id_train_ids = id_twitter_ids[:id_train_num]
-    id_test_ids = id_twitter_ids[:-id_test_num]
+    id_test_ids = id_twitter_ids[-id_test_num:]
     ood_train_ids = ood_twitter_ids[:ood_train_num]
     ood_test_ids = ood_twitter_ids[-ood_test_num:]
 
