@@ -14,18 +14,20 @@ from sklearn import metrics
 # as the test set to evaluate our framework.'
 #                   train, test
 # in-domain:        923, 230; 
-# out-of-domain:    100, 300. 
+# out-of-domain:    80, 320. 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
 id_train_num = 923
 id_test_num = 230
-ood_train_num = 100
-ood_test_num = 300
+# Split the ood data into 80-20 split. (In paper 5.1: ...divide the test dataset and the size of m 
+# # according to the 80-20 principle. )
+ood_train_num = 80
+ood_test_num = 320
 bs = 16
-n_epochs = 1   # pre-training epochs
-n_epochs_2nd = 1  # 2nd round of training epochs.
+n_epochs = 100   # pre-training epochs
+n_epochs_2nd = 100  # 2nd round of training epochs.
 
 random.seed(1)
 
@@ -38,7 +40,7 @@ if __name__ == '__main__':
     id_train_ids = id_twitter_ids[:id_train_num]
     id_test_ids = id_twitter_ids[:-id_test_num]
     ood_train_ids = ood_twitter_ids[:ood_train_num]
-    ood_test_ids = ood_twitter_ids[:-ood_test_num]
+    ood_test_ids = ood_twitter_ids[-ood_test_num:]
 
     print(len(id_twitter_ids), len(ood_twitter_ids))
     id_treeDic, ood_treeDic = my_loadTree('Twitter')
