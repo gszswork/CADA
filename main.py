@@ -139,7 +139,7 @@ if __name__ == '__main__':
             # Align the order of predicted domain and domain true labels.
             new_domain_y = batch.domain_y[indices]
             domain_loss = F.nll_loss(out_domains, new_domain_y)
-            loss = label_loss - domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
+            loss = label_loss + domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
