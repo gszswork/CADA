@@ -83,6 +83,7 @@ if __name__ == '__main__':
     avg_loss, avg_acc = [], []
     batch_idx = 0
     for epoch in range(n_epochs):
+        model.train()
         for batch in id_train_dataloader:
             batch.to(device)
             out_labels = model.forward_label(batch)
@@ -102,6 +103,7 @@ if __name__ == '__main__':
             batch_idx += 1
 
         # Test the model on in-domain data, and save the best params. 
+        model.eval()
         best_accuracy = -1
         true_np, pred_np = np.array([]), np.array([])   
         for batch in id_test_dataloader:
@@ -121,7 +123,7 @@ if __name__ == '__main__':
     # 2nd round of training: Train the model with GRL.
     model.load_state_dict(torch.load('best_params.pt'))
     for epoch in range(n_epochs_2nd):
-
+        model.train()
         second_iter = iter(second_train_dataloader)
 
         for i in range(len(second_train_dataloader)):
@@ -145,6 +147,7 @@ if __name__ == '__main__':
             optimizer.step()
 
         # Test the model on out-of-domain data.
+        model.eval()
         true_np, pred_np = np.array([]), np.array([])
         for batch in ood_test_dataloader: 
             batch.to(device)

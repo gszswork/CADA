@@ -98,16 +98,11 @@ if __name__ == '__main__':
     optimizer = AdamW(model.parameters(), lr=1e-5)
     # Training loop
 
-    #for epoch in range(num_epochs):
-    #    for batch in id_train_loader:
-
+    # 1. Pre-training: Train the model on in-domain data.
     for epoch in range(num_epochs):
         model.train()
         for batch in id_train_loader:
-            #input_ids = batch['input_ids']
-            #attention_mask = batch['attention_mask']
-            labels = batch['labels']
-
+            labels = batch['labels'].to(device)
             # Forward pass
             outputs = model.forward_label(batch)
             _, pred = outputs.max(dim=-1)
@@ -121,14 +116,13 @@ if __name__ == '__main__':
         model.eval()
         valid_true, valid_pred = np.array([]), np.array([])
         for batch in id_test_loader:
-            input_ids = batch['input_ids']
-            attention_mask = batch['attention_mask']
-            labels = batch['labels']
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            labels = batch['labels'].to(device)
+            outputs = model.forward_label(batch)
             _, pred = outputs.max(dim=-1)
             
             valid_true = np.append(valid_true, labels.cpu().numpy())
             valid_pred = np.append(valid_pred, pred.cpu().numpy())
+        print('1st round validation report:')
         print(metrics.classification_report(valid_true, valid_pred))
         
         best_accuracy = -1
@@ -136,7 +130,7 @@ if __name__ == '__main__':
         for batch in ood_test_loader:
             #input_ids = batch['input_ids']
             #ttention_mask = batch['attention_mask']
-            labels = batch['labels']
+            labels = batch['labels'].to(device)
             #outputs = model(input_ids=input_ids, attention_mask=attention_mask)
 
             outputs = model.forward_label(batch)
@@ -144,7 +138,7 @@ if __name__ == '__main__':
             
             test_true = np.append(test_true, labels.cpu().numpy())
             test_pred = np.append(test_pred, pred.cpu().numpy())
-            
+        print('1st round test report:')
         print(metrics.classification_report(test_true, test_pred))
         cur_acc = metrics.accuracy_score(test_true, test_pred)
         if cur_acc > best_accuracy:
@@ -171,7 +165,7 @@ if __name__ == '__main__':
             label_loss = F.nll_loss(out_labels[ood_indices], labels[ood_indices])
 
             # Align the order of predicted domain and domain true labels.
-            new_domain_y = batch.domain_y[indices]
+            new_domain_y = batch['domain_y'][indices].to(device)
             domain_loss = F.nll_loss(out_domains, new_domain_y)
 
             loss = label_loss + domain_loss
@@ -183,10 +177,11 @@ if __name__ == '__main__':
         model.eval()
         valid_true, valid_pred = np.array([]), np.array([])
         for batch in id_test_loader:
-            input_ids = batch['input_ids']
-            attention_mask = batch['attention_mask']
-            labels = batch['labels']
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            #input_ids = batch['input_ids']
+            #attention_mask = batch['attention_mask']
+            labels = batch['labels'].to(device)
+            outputs = model.forward_label(batch)
+            #outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             _, pred = outputs.max(dim=-1)
             
             valid_true = np.append(valid_true, labels.cpu().numpy())
@@ -196,10 +191,11 @@ if __name__ == '__main__':
         best_accuracy = -1
         test_true, test_pred = np.array([]), np.array([])
         for batch in ood_test_loader:
-            input_ids = batch['input_ids']
-            attention_mask = batch['attention_mask']
-            labels = batch['labels']
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            #input_ids = batch['input_ids']
+            #attention_mask = batch['attention_mask']
+            labels = batch['labels'].to(device)
+            outputs = model.forward_label(batch)
+            #outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             _, pred = outputs.max(dim=-1)
             
             test_true = np.append(test_true, labels.cpu().numpy())
