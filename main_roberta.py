@@ -123,7 +123,7 @@ if __name__ == '__main__':
             valid_true = np.append(valid_true, labels.cpu().numpy())
             valid_pred = np.append(valid_pred, pred.cpu().numpy())
         print('1st round validation report:')
-        print(metrics.classification_report(valid_true, valid_pred))
+        print(metrics.classification_report(valid_true, valid_pred, digits=3))
         
         best_accuracy = -1
         test_true, test_pred = np.array([]), np.array([])
@@ -139,7 +139,7 @@ if __name__ == '__main__':
             test_true = np.append(test_true, labels.cpu().numpy())
             test_pred = np.append(test_pred, pred.cpu().numpy())
         print('1st round test report:')
-        print(metrics.classification_report(test_true, test_pred))
+        print(metrics.classification_report(test_true, test_pred, digits=3))
         cur_acc = metrics.accuracy_score(test_true, test_pred)
         if cur_acc > best_accuracy:
             best_accuracy = cur_acc
@@ -187,7 +187,7 @@ if __name__ == '__main__':
             
             valid_true = np.append(valid_true, labels.cpu().numpy())
             valid_pred = np.append(valid_pred, pred.cpu().numpy())
-        print(metrics.classification_report(valid_true, valid_pred))
+        print(metrics.classification_report(valid_true, valid_pred, digits=3))
         
         best_accuracy = -1
         test_true, test_pred = np.array([]), np.array([])
@@ -201,4 +201,4 @@ if __name__ == '__main__':
             
             test_true = np.append(test_true, labels.cpu().numpy())
             test_pred = np.append(test_pred, pred.cpu().numpy())
-        print(metrics.classification_report(test_true, test_pred))
+        print(metrics.classification_report(test_true, test_pred, digits=3))

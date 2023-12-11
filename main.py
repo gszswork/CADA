@@ -142,12 +142,23 @@ if __name__ == '__main__':
             new_domain_y = batch.domain_y[indices]
             domain_loss = F.nll_loss(out_domains, new_domain_y)
             loss = label_loss + domain_loss   # Here it has to be minus domain_loss cause we want to maximize it. 
+            #                                   Actually we don't. The GRL will manage the gradient here, so still plus. 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-        # Test the model on out-of-domain data.
+        # Test the model on in-distribution data. 
         model.eval()
+        true_np, pred_np = np.array([]), np.array([])
+        for batch in id_test_dataloader:
+            batch.to(device)
+            out_labels = model.forward_label(batch)
+            _, pred = out_labels.max(dim=-1)
+            true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
+            pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
+        print('Testing on in-domain test data:')
+        print(metrics.classification_report(true_np, pred_np, digits=3))
+        # Test the model on out-of-domain data.
         true_np, pred_np = np.array([]), np.array([])
         for batch in ood_test_dataloader: 
             batch.to(device)
@@ -156,4 +167,4 @@ if __name__ == '__main__':
             true_np = np.concatenate((true_np, batch.y.cpu().numpy()))
             pred_np = np.concatenate((pred_np, pred.cpu().numpy()))
         print('Testing on out-of-domain test data:')
-        print(metrics.classification_report(true_np, pred_np))
+        print(metrics.classification_report(true_np, pred_np, digits=3))
