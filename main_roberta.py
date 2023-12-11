@@ -76,10 +76,10 @@ if __name__ == '__main__':
     # Splice the Model.
     
     bert_feat_dim=768
-    feature_extractor = RoBERTaExtractor()
-    label_classifier = RoBERTaLabelClassifier()
-    domain_classifier0 = RoBERTaDomainClassifier(768, 2)
-    domain_classifier1 = RoBERTaDomainClassifier(768, 2)
+    feature_extractor = RoBERTaExtractor().to(device)
+    label_classifier = RoBERTaLabelClassifier().to(device)
+    domain_classifier0 = RoBERTaDomainClassifier(768, 2).to(device)
+    domain_classifier1 = RoBERTaDomainClassifier(768, 2).to(device)
     domain_classifier_list = [domain_classifier0, domain_classifier1]
     model = CADA(feature_extractor, label_classifier, domain_classifier_list)
     model.to(device)
@@ -155,17 +155,18 @@ if __name__ == '__main__':
             batch = next(second_iter)
 
             labels = batch['labels'].to(device)
+            domain_y = batch['domain_y'].to(device)
             p = float(i + epoch * len(ood_train_loader)) / n_epochs_2nd / len(ood_train_loader)
             alpha = 2. / (1. + np.exp(-10 * p)) - 1
             alpha = torch.tensor(alpha).to(device)
             #print(batch.domain_y)
             out_labels, out_domains, indices = model(batch, alpha)    
             # Only get label_loss from out-of-domain samples. Label prediction is performed on the original data order. 
-            ood_indices = torch.where(batch['domain_y'] == 1)[0]
+            ood_indices = torch.where(domain_y == 1)[0]
             label_loss = F.nll_loss(out_labels[ood_indices], labels[ood_indices])
 
             # Align the order of predicted domain and domain true labels.
-            new_domain_y = batch['domain_y'][indices].to(device)
+            new_domain_y = domain_y[indices]
             domain_loss = F.nll_loss(out_domains, new_domain_y)
 
             loss = label_loss + domain_loss

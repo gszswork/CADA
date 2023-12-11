@@ -48,7 +48,7 @@ class CADA(torch.nn.Module):
 
         return label_output, domain_output, one_indices, zero_indices
 '''
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class CADA(torch.nn.Module):
     def __init__(self, feature_extractor, label_predictor, domain_classifier_list):
@@ -75,12 +75,12 @@ class CADA(torch.nn.Module):
         x_domain_feat = [x_feat[indices[i]] for i in range(self.class_num)]
 
         # TODO: implementation of alpha's calcualtion.
-        domain_output = [self.domain_classifier_list[i](x_domain_feat[i], alpha) for i in range(self.class_num)]
+        domain_output = [self.domain_classifier_list[i](x_domain_feat[i].to(device), alpha.to(device)) for i in range(self.class_num)]
 
         cat_domain_output = torch.cat(domain_output, dim=0)
         label_output = F.log_softmax(label_output, dim=1)
         cat_domain_output = F.log_softmax(cat_domain_output, dim=1)
-        indices = torch.cat(indices, dim=0)
+        indices = torch.cat(indices, dim=0).to(device)
 
         return label_output, cat_domain_output, indices
         
